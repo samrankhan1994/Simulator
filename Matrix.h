@@ -1,7 +1,7 @@
 #pragma once
 
+#include <iostream>
 #include <initializer_list>
-#include <stdint.h>
 
 class Matrix
 {
@@ -20,11 +20,37 @@ public:
 	Matrix& operator=(const Matrix& m);
 	Matrix& operator=(Matrix&& m) noexcept;
 
-	double& operator()(size_t i, size_t j);
+	double& operator()(const size_t i, const size_t j);
+	Matrix operator~();
+
 	Matrix& operator+=(const Matrix& m);
 	Matrix& operator+=(double scalar);
 	Matrix operator+(const Matrix& m);
 	Matrix operator+(double scalar);
+
+	Matrix& operator-=(const Matrix& m);
+	Matrix& operator-=(double scalar);
+	Matrix operator-(const Matrix& m);
+	Matrix operator-(double scalar);
+
+	Matrix& operator*=(const Matrix& m);
+	Matrix& operator*=(double scalar);
+	Matrix operator*(const Matrix& m);
+	Matrix operator*(double scalar);
+
+	//division operators
+
+	static Matrix eye(size_t dim);
+	static Matrix ones(size_t rows, size_t cols);
+	static Matrix zeros(size_t rows, size_t cols);
+	static Matrix skew(const Matrix& m);
+
+
 	~Matrix();
+
+	friend std::ostream& operator<<(std::ostream& os, const Matrix& m);
+	friend Matrix operator+(double scalar, const Matrix& m);
+	friend Matrix operator-(double scalar, const Matrix& m);
+	friend Matrix operator*(double scalar, const Matrix& m);
 };
 
