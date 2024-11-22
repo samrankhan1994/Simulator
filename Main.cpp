@@ -4,8 +4,8 @@
 
 int main()
 {
-	Matrix m1(1, 3, { 1,2,3 });
-	Matrix m2(3, 1, { 1,2,3 });
-	m1 = Matrix::skew(m2) * m2;
-	std::cout << m1;
+	Matrix m1(2, 2, { 1,2, 3, 4 });
+	Matrix m2(m1);
+	m2 /= m1;
+	std::cout << m2 << std::endl;
 }

@@ -22,6 +22,26 @@ double* Matrix::allocate(size_t size)
 	return ptr;
 }
 
+void Matrix::rowSwap(size_t r1, size_t r2)
+{
+	assert(r1 < rows && r2 < rows);
+	for (size_t i = 0; i < cols; i++)
+	{
+		double temp = *(data + r1 * cols + i);
+		*(data + r1 * cols + i) = *(data + r2 * cols + i);
+		*(data + r2 * cols + i) = temp;
+	}
+}
+
+void Matrix::rowOp(size_t r1, size_t r2, double factor)
+{
+	assert(r1 < rows && r2 < rows && !_isnan(factor));
+	for (size_t i = 0; i < cols; i++)
+	{
+		*(data + r1 * cols + i) = *(data + r1 * cols + i) -  *(data + r2 * cols + i) * factor;
+	}
+}
+
 Matrix::Matrix(): rows(0), cols(0), data(nullptr) {}
 
 Matrix::Matrix(size_t _rows, size_t _cols): rows(_rows), cols(_cols)
@@ -108,10 +128,16 @@ Matrix& Matrix::operator=(Matrix&& m) noexcept
 	return *this;
 }
 
-double& Matrix::operator()(const size_t i, const size_t j)
+double& Matrix::operator()(size_t i, size_t j)
 {
 	return *(data + i * cols + j);
 }
+
+double Matrix::operator()(size_t i, size_t j) const
+{
+	return *(data + i * cols + j);
+}
+
 
 Matrix Matrix::operator~()
 {
@@ -158,7 +184,7 @@ Matrix& Matrix::operator+=(double scalar)
 	return *this;
 }
 
-Matrix Matrix::operator+(const Matrix& m)
+Matrix Matrix::operator+(const Matrix& m) const
 {
 	assert(rows == m.rows && cols == m.cols);
 	Matrix out(rows, cols);
@@ -172,7 +198,7 @@ Matrix Matrix::operator+(const Matrix& m)
 	return out;
 }
 
-Matrix Matrix::operator+(double scalar)
+Matrix Matrix::operator+(double scalar) const
 {
 	if (data == nullptr) return Matrix(1, 1, { scalar });
 	Matrix out(rows, cols);
@@ -218,7 +244,7 @@ Matrix& Matrix::operator-=(double scalar)
 	return *this;
 }
 
-Matrix Matrix::operator-(const Matrix& m)
+Matrix Matrix::operator-(const Matrix& m) const
 {
 	assert(rows == m.rows && cols == m.cols);
 	Matrix out(rows, cols);
@@ -232,7 +258,7 @@ Matrix Matrix::operator-(const Matrix& m)
 	return out;
 }
 
-Matrix Matrix::operator-(double scalar)
+Matrix Matrix::operator-(double scalar) const
 {
 	if (data == nullptr) return Matrix(1, 1, { -scalar });
 	Matrix out(rows, cols);
@@ -278,7 +304,7 @@ Matrix& Matrix::operator*=(double scalar)
 	return *this;
 }
 
-Matrix Matrix::operator*(const Matrix& m)
+Matrix Matrix::operator*(const Matrix& m) const
 {
 	assert(cols == m.rows);
 	Matrix out(rows, m.cols);
@@ -297,7 +323,7 @@ Matrix Matrix::operator*(const Matrix& m)
 	return out;
 }
 
-Matrix Matrix::operator*(double scalar)
+Matrix Matrix::operator*(double scalar) const
 {
 	if (data == nullptr) return Matrix();
 	Matrix out(rows, cols);
@@ -309,6 +335,128 @@ Matrix Matrix::operator*(double scalar)
 		}
 	}
 	return out;
+}
+
+Matrix& Matrix::operator/=(const Matrix& m)
+{
+	assert(cols == m.rows && m.cols == m.rows);
+	Matrix mInv = m.inv();
+	*this = *this * mInv;
+	return *this;
+}
+
+Matrix& Matrix::operator/=(double scalar)
+{
+	for (size_t i = 0; i < rows; i++)
+	{
+		for (size_t j = 0; j < cols; j++)
+		{
+			*(data + i * cols + j) /= scalar;
+		}
+	}
+	return *this;
+}
+
+Matrix Matrix::operator/(const Matrix& m) const
+{
+	assert(cols == m.rows && m.cols == m.rows);
+	Matrix mInv = m.inv();
+	return *this * mInv;
+}
+
+Matrix Matrix::operator/(double scalar) const
+{
+	if (data == nullptr) return Matrix();
+	Matrix out(rows, cols);
+	for (size_t i = 0; i < rows; i++)
+	{
+		for (size_t j = 0; j < cols; j++)
+		{
+			*(out.data + i * cols + j) = *(data + i * cols + j) / scalar;
+		}
+	}
+	return out;
+}
+
+double Matrix::det() const
+{
+	assert(data != nullptr && rows == cols);
+	Matrix A(*this);
+	int numSwaps = 0;
+	for (size_t j = 0; j < cols-1; j++)
+	{
+		if (abs(A(j, j)) < DBL_EPSILON)
+		{
+			double max = 0;
+			size_t maxRowIndex = j;
+			for (size_t i = j + 1; i < rows; i++)
+			{
+				if (abs(A(i, j)) > max)
+				{
+					max = A(i, j);
+					maxRowIndex = i;
+				}
+			}
+			if (maxRowIndex == j) return 0.0;
+			A.rowSwap(j, maxRowIndex);
+			numSwaps++;
+		}
+		for (size_t i = j+1; i < rows; i++)
+		{
+			double factor = A(i, j) / A(j, j);
+			A.rowOp(i, j, factor);
+		}
+	}
+	double ans = 1.0;
+	for (size_t i = 0; i < rows; i++) ans *= A(i, i);
+	return numSwaps % 2 ? -ans : ans;
+}
+
+Matrix Matrix::inv() const
+{
+	assert(abs(det()) > DBL_EPSILON);
+	Matrix aug = Matrix::eye(rows);
+	Matrix A(*this);
+	for (size_t j = 0; j < cols - 1; j++)
+	{
+		if (abs(A(j, j)) < DBL_EPSILON)
+		{
+			double max = 0;
+			size_t rowIndex = j;
+			for (size_t i = j + 1; i < rows; i++)
+			{
+				if (abs(A(i, j)) > max)
+				{
+					max = A(i, j);
+					rowIndex = i;
+				}
+			}
+			A.rowSwap(j, rowIndex);
+			aug.rowSwap(j, rowIndex);
+		}
+		for (size_t i = j + 1; i < rows; i++)
+		{
+			double factor = A(i, j) / A(j, j);
+			A.rowOp(i, j, factor);
+			aug.rowOp(i, j, factor);
+		}
+	}
+	for (size_t j = cols-1; j > 0; j--)
+	{
+		for (int i = (int)j - 1; i >= 0; i--)
+		{
+			double factor = A(i, j) / A(j, j);
+			A.rowOp(i, j, factor);
+			aug.rowOp(i, j, factor);
+		}
+	}
+	for (size_t i = 0; i < rows; i++)
+	{
+		double factor = 1 / A(i, i);
+		for (size_t j = 0; j < cols; j++)
+			aug(i, j) = factor * aug(i, j);
+	}
+	return aug;
 }
 
 Matrix Matrix::eye(size_t dim)
@@ -418,6 +566,25 @@ Matrix operator*(double scalar, const Matrix& m)
 		for (size_t j = 0; j < m.cols; j++)
 		{
 			*(out.data + i * out.cols + j) = scalar * *(m.data + i * m.cols + j);
+		}
+	}
+	return out;
+}
+
+Matrix operator/(double scalar, const Matrix& m)
+{
+	if (m.data == nullptr) return Matrix();
+	return scalar * m.inv();
+}
+
+Matrix abs(const Matrix& m)
+{
+	Matrix out(m.rows, m.cols);
+	for (size_t i = 0; i < m.rows; i++)
+	{
+		for (size_t j = 0; j < m.cols; j++)
+		{
+			*(out.data + i * out.cols + j) = abs(*(m.data + i * m.cols + j));
 		}
 	}
 	return out;
