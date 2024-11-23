@@ -42,6 +42,50 @@ void Matrix::rowOp(size_t r1, size_t r2, double factor)
 	}
 }
 
+void Matrix::rowScaling(size_t r, double factor)
+{
+	assert(r < rows && !_isnan(factor));
+	for (size_t i = 0; i < cols; i++)
+	{
+		*(data + r * cols + i) = *(data + r * cols + i) * factor;
+	}
+}
+
+std::tuple<bool, Matrix, Matrix, size_t> Matrix::LUDecompose() const
+{
+	assert(data != nullptr && rows == cols);
+	Matrix L = Matrix::eye(rows), U(*this);
+	size_t numSwaps = 0;
+	double absValue;
+	for (size_t j = 0; j < cols - 1; j++)
+	{
+		double max = 0;
+		size_t maxRowIndex = j;
+		for (size_t i = j; i < rows; i++)
+		{
+			if ((absValue = abs(U(i, j))) > max)
+			{
+				max = absValue;
+				maxRowIndex = i;
+			}
+		}
+		if (max < TOL) return { false, Matrix(), Matrix(), numSwaps };
+		if (maxRowIndex != j)
+		{
+			U.rowSwap(j, maxRowIndex);
+			L.rowSwap(j, maxRowIndex);
+			numSwaps++;
+		}
+		for (size_t i = j + 1; i < rows; i++)
+		{
+			double factor = U(i, j) / U(j, j);
+			U.rowOp(i, j, factor);
+			L.rowOp(i, j, factor);
+		}
+	}
+	return { true, std::move(L), std::move(U), numSwaps };
+}
+
 Matrix::Matrix(): rows(0), cols(0), data(nullptr) {}
 
 Matrix::Matrix(size_t _rows, size_t _cols): rows(_rows), cols(_cols)
@@ -380,83 +424,41 @@ Matrix Matrix::operator/(double scalar) const
 
 double Matrix::det() const
 {
-	assert(data != nullptr && rows == cols);
-	Matrix A(*this);
-	int numSwaps = 0;
-	for (size_t j = 0; j < cols-1; j++)
+	auto [ok, L, U, numSwaps] = LUDecompose();
+	if (ok)
 	{
-		if (abs(A(j, j)) < DBL_EPSILON)
+		double ans = 1.0;
+		for (size_t i = 0; i < rows; i++)
 		{
-			double max = 0;
-			size_t maxRowIndex = j;
-			for (size_t i = j + 1; i < rows; i++)
-			{
-				if (abs(A(i, j)) > max)
-				{
-					max = A(i, j);
-					maxRowIndex = i;
-				}
-			}
-			if (maxRowIndex == j) return 0.0;
-			A.rowSwap(j, maxRowIndex);
-			numSwaps++;
+			ans *= *(U.data + i * cols + i);
 		}
-		for (size_t i = j+1; i < rows; i++)
-		{
-			double factor = A(i, j) / A(j, j);
-			A.rowOp(i, j, factor);
-		}
+		return numSwaps % 2 ? -ans : ans;
 	}
-	double ans = 1.0;
-	for (size_t i = 0; i < rows; i++) ans *= A(i, i);
-	return numSwaps % 2 ? -ans : ans;
+	else
+		return 0.0;
 }
 
 Matrix Matrix::inv() const
 {
-	assert(abs(det()) > DBL_EPSILON);
-	Matrix aug = Matrix::eye(rows);
-	Matrix A(*this);
-	for (size_t j = 0; j < cols - 1; j++)
-	{
-		if (abs(A(j, j)) < DBL_EPSILON)
-		{
-			double max = 0;
-			size_t rowIndex = j;
-			for (size_t i = j + 1; i < rows; i++)
-			{
-				if (abs(A(i, j)) > max)
-				{
-					max = A(i, j);
-					rowIndex = i;
-				}
-			}
-			A.rowSwap(j, rowIndex);
-			aug.rowSwap(j, rowIndex);
-		}
-		for (size_t i = j + 1; i < rows; i++)
-		{
-			double factor = A(i, j) / A(j, j);
-			A.rowOp(i, j, factor);
-			aug.rowOp(i, j, factor);
-		}
-	}
+	auto [ok, L, U, numSwaps] = LUDecompose();
+	assert(ok);
+	assert(abs(*(U.data + rows * cols - 1)) > TOL);
+
 	for (size_t j = cols-1; j > 0; j--)
 	{
 		for (int i = (int)j - 1; i >= 0; i--)
 		{
-			double factor = A(i, j) / A(j, j);
-			A.rowOp(i, j, factor);
-			aug.rowOp(i, j, factor);
+			double factor = U(i, j) / U(j, j);
+			U.rowOp(i, j, factor);
+			L.rowOp(i, j, factor);
 		}
 	}
 	for (size_t i = 0; i < rows; i++)
 	{
-		double factor = 1 / A(i, i);
-		for (size_t j = 0; j < cols; j++)
-			aug(i, j) = factor * aug(i, j);
+		double factor = 1 / U(i, i);
+		L.rowScaling(i, factor);
 	}
-	return aug;
+	return L;
 }
 
 Matrix Matrix::eye(size_t dim)

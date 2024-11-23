@@ -2,17 +2,19 @@
 
 #include <iostream>
 #include <initializer_list>
-#include <compare>
 
 class Matrix
 {
+	constexpr static inline double TOL = 1.0e-6;
 	size_t rows;
 	size_t cols;
 	double* data;
 	double* allocate(size_t size);
 	void rowSwap(size_t r1, size_t r2);
 	void rowOp(size_t r1, size_t r2, double factor); //useful for R1 = R1 - factor * R2 
-
+	void rowScaling(size_t r, double factor);		 //useful for R1 = factor * R1
+	std::tuple<bool, Matrix, Matrix, size_t> LUDecompose() const;	// output(isDecomposed, Lower, Upper, numOfSwaps)
+	
 public:
 	Matrix();
 	Matrix(size_t rows, size_t cols);
