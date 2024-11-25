@@ -57,6 +57,7 @@ public:
 	static Quaternion lerp(const Quaternion& start, const Quaternion& end, double u) noexcept;
 	static Quaternion slerp(const Quaternion& start, const Quaternion& end, double u) noexcept;
 	static Quaternion fromAxisAngle(const double& x, const double& y, const double& z, const double& angle) noexcept;
+
 	~Quaternion() noexcept = default;
 
 	friend std::ostream& operator<<(std::ostream& os, const Quaternion& q);

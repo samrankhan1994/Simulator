@@ -5,8 +5,7 @@
 
 int main()
 {
-	Quaternion q1, q2(0.0, 1.57, 0.0);
-
-	std::cout << q2 << std::endl;
+	Matrix m{ {5} };
+	std::cout << m.inv() << std::endl;
 	
 }

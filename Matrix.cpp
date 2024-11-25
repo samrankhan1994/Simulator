@@ -1,12 +1,11 @@
 #include "Matrix.h"
 
 #include <iostream>
-#include <exception>
 #include <memory>
 #include <cassert>
 
 
-double* Matrix::allocate(size_t size)
+double* Matrix::allocate(size_t size) noexcept
 {
 	double* ptr = nullptr;
 	if (size > 0)
@@ -22,9 +21,8 @@ double* Matrix::allocate(size_t size)
 	return ptr;
 }
 
-void Matrix::rowSwap(size_t r1, size_t r2)
+void Matrix::rowSwap(size_t r1, size_t r2) noexcept
 {
-	assert(r1 < rows && r2 < rows);
 	for (size_t i = 0; i < cols; i++)
 	{
 		double temp = *(data + r1 * cols + i);
@@ -33,25 +31,23 @@ void Matrix::rowSwap(size_t r1, size_t r2)
 	}
 }
 
-void Matrix::rowOp(size_t r1, size_t r2, double factor)
+void Matrix::rowOp(size_t r1, size_t r2, double factor) noexcept
 {
-	assert(r1 < rows && r2 < rows && !_isnan(factor));
 	for (size_t i = 0; i < cols; i++)
 	{
 		*(data + r1 * cols + i) = *(data + r1 * cols + i) -  *(data + r2 * cols + i) * factor;
 	}
 }
 
-void Matrix::rowScaling(size_t r, double factor)
+void Matrix::rowScaling(size_t r, double factor) noexcept
 {
-	assert(r < rows && !_isnan(factor));
 	for (size_t i = 0; i < cols; i++)
 	{
 		*(data + r * cols + i) = *(data + r * cols + i) * factor;
 	}
 }
 
-std::tuple<bool, Matrix, Matrix, size_t> Matrix::LUDecompose() const
+std::tuple<bool, Matrix, Matrix, size_t> Matrix::LUDecompose() const noexcept
 {
 	assert(data != nullptr && rows == cols);
 	Matrix L = Matrix::eye(rows), U(*this);
@@ -63,7 +59,7 @@ std::tuple<bool, Matrix, Matrix, size_t> Matrix::LUDecompose() const
 		size_t maxRowIndex = j;
 		for (size_t i = j; i < rows; i++)
 		{
-			if ((absValue = abs(U(i, j))) > max)
+			if ((absValue = abs(*(U.data + i * U.cols + j))) > max)
 			{
 				max = absValue;
 				maxRowIndex = i;
@@ -78,7 +74,7 @@ std::tuple<bool, Matrix, Matrix, size_t> Matrix::LUDecompose() const
 		}
 		for (size_t i = j + 1; i < rows; i++)
 		{
-			double factor = U(i, j) / U(j, j);
+			double factor = *(U.data + i * U.cols + j) / *(U.data + j * U.cols + j);
 			U.rowOp(i, j, factor);
 			L.rowOp(i, j, factor);
 		}
@@ -86,14 +82,14 @@ std::tuple<bool, Matrix, Matrix, size_t> Matrix::LUDecompose() const
 	return { true, std::move(L), std::move(U), numSwaps };
 }
 
-Matrix::Matrix(): rows(0), cols(0), data(nullptr) {}
+Matrix::Matrix() noexcept : rows(0), cols(0), data(nullptr) {}
 
-Matrix::Matrix(size_t _rows, size_t _cols): rows(_rows), cols(_cols)
+Matrix::Matrix(size_t _rows, size_t _cols) noexcept : rows(_rows), cols(_cols)
 {
 	data = allocate(rows * cols);
 }
 
-Matrix::Matrix(size_t _rows, size_t _cols, std::initializer_list<double> list): rows(_rows), cols(_cols)
+Matrix::Matrix(size_t _rows, size_t _cols, std::initializer_list<double> list) noexcept : rows(_rows), cols(_cols)
 {
 	assert(rows * cols == list.size());
 	data = allocate(rows * cols);
@@ -105,7 +101,7 @@ Matrix::Matrix(size_t _rows, size_t _cols, std::initializer_list<double> list): 
 	}
 }
 
-Matrix::Matrix(std::initializer_list<std::initializer_list<double>> list)
+Matrix::Matrix(std::initializer_list<std::initializer_list<double>> list) noexcept
 {
 	rows = list.size();
 	cols = list.begin()->size();
@@ -122,7 +118,7 @@ Matrix::Matrix(std::initializer_list<std::initializer_list<double>> list)
 	}
 }
 
-Matrix::Matrix(const Matrix& m)
+Matrix::Matrix(const Matrix& m) noexcept
 {
 	rows = m.rows;
 	cols = m.cols;
@@ -145,7 +141,7 @@ Matrix::Matrix(Matrix&& m) noexcept
 	m.data = nullptr;
 }
 
-Matrix& Matrix::operator=(const Matrix& m)
+Matrix& Matrix::operator=(const Matrix& m) noexcept
 {
 	if (data != nullptr) delete[] data;
 	rows = m.rows;
@@ -172,18 +168,18 @@ Matrix& Matrix::operator=(Matrix&& m) noexcept
 	return *this;
 }
 
-double& Matrix::operator()(size_t i, size_t j)
+double& Matrix::operator()(size_t i, size_t j) noexcept
 {
 	return *(data + i * cols + j);
 }
 
-double Matrix::operator()(size_t i, size_t j) const
+double Matrix::operator()(size_t i, size_t j) const noexcept
 {
 	return *(data + i * cols + j);
 }
 
 
-Matrix Matrix::operator~()
+Matrix Matrix::operator~() noexcept
 {
 	Matrix out(cols, rows);
 	for (size_t i = 0; i < rows; i++)
@@ -196,7 +192,7 @@ Matrix Matrix::operator~()
 	return out;
 }
 
-Matrix& Matrix::operator+=(const Matrix& m)
+Matrix& Matrix::operator+=(const Matrix& m) noexcept
 {
 	assert(rows == m.rows && cols == m.cols);
 	for (size_t i = 0; i < rows; i++)
@@ -209,7 +205,7 @@ Matrix& Matrix::operator+=(const Matrix& m)
 	return *this;
 }
 
-Matrix& Matrix::operator+=(double scalar)
+Matrix& Matrix::operator+=(double scalar) noexcept
 {
 	if (data == nullptr)
 	{
@@ -228,7 +224,7 @@ Matrix& Matrix::operator+=(double scalar)
 	return *this;
 }
 
-Matrix Matrix::operator+(const Matrix& m) const
+Matrix Matrix::operator+(const Matrix& m) const noexcept
 {
 	assert(rows == m.rows && cols == m.cols);
 	Matrix out(rows, cols);
@@ -242,7 +238,7 @@ Matrix Matrix::operator+(const Matrix& m) const
 	return out;
 }
 
-Matrix Matrix::operator+(double scalar) const
+Matrix Matrix::operator+(double scalar) const noexcept
 {
 	if (data == nullptr) return Matrix(1, 1, { scalar });
 	Matrix out(rows, cols);
@@ -256,7 +252,7 @@ Matrix Matrix::operator+(double scalar) const
 	return out;
 }
 
-Matrix& Matrix::operator-=(const Matrix& m)
+Matrix& Matrix::operator-=(const Matrix& m) noexcept
 {
 	assert(rows == m.rows && cols == m.cols);
 	for (size_t i = 0; i < rows; i++)
@@ -269,7 +265,7 @@ Matrix& Matrix::operator-=(const Matrix& m)
 	return *this;
 }
 
-Matrix& Matrix::operator-=(double scalar)
+Matrix& Matrix::operator-=(double scalar) noexcept
 {
 	if (data == nullptr)
 	{
@@ -288,7 +284,7 @@ Matrix& Matrix::operator-=(double scalar)
 	return *this;
 }
 
-Matrix Matrix::operator-(const Matrix& m) const
+Matrix Matrix::operator-(const Matrix& m) const noexcept
 {
 	assert(rows == m.rows && cols == m.cols);
 	Matrix out(rows, cols);
@@ -302,7 +298,7 @@ Matrix Matrix::operator-(const Matrix& m) const
 	return out;
 }
 
-Matrix Matrix::operator-(double scalar) const
+Matrix Matrix::operator-(double scalar) const noexcept
 {
 	if (data == nullptr) return Matrix(1, 1, { -scalar });
 	Matrix out(rows, cols);
@@ -316,7 +312,7 @@ Matrix Matrix::operator-(double scalar) const
 	return out;
 }
 
-Matrix& Matrix::operator*=(const Matrix& m)
+Matrix& Matrix::operator*=(const Matrix& m) noexcept
 {
 	assert(cols == m.rows);
 	Matrix out(rows, m.cols);
@@ -336,7 +332,7 @@ Matrix& Matrix::operator*=(const Matrix& m)
 	return *this;
 }
 
-Matrix& Matrix::operator*=(double scalar)
+Matrix& Matrix::operator*=(double scalar) noexcept
 {
 	for (size_t i = 0; i < rows; i++)
 	{
@@ -348,7 +344,7 @@ Matrix& Matrix::operator*=(double scalar)
 	return *this;
 }
 
-Matrix Matrix::operator*(const Matrix& m) const
+Matrix Matrix::operator*(const Matrix& m) const noexcept
 {
 	assert(cols == m.rows);
 	Matrix out(rows, m.cols);
@@ -367,7 +363,7 @@ Matrix Matrix::operator*(const Matrix& m) const
 	return out;
 }
 
-Matrix Matrix::operator*(double scalar) const
+Matrix Matrix::operator*(double scalar) const noexcept
 {
 	if (data == nullptr) return Matrix();
 	Matrix out(rows, cols);
@@ -381,7 +377,7 @@ Matrix Matrix::operator*(double scalar) const
 	return out;
 }
 
-Matrix& Matrix::operator/=(const Matrix& m)
+Matrix& Matrix::operator/=(const Matrix& m) noexcept
 {
 	assert(cols == m.rows && m.cols == m.rows);
 	Matrix mInv = m.inv();
@@ -389,7 +385,7 @@ Matrix& Matrix::operator/=(const Matrix& m)
 	return *this;
 }
 
-Matrix& Matrix::operator/=(double scalar)
+Matrix& Matrix::operator/=(double scalar) noexcept
 {
 	for (size_t i = 0; i < rows; i++)
 	{
@@ -401,14 +397,14 @@ Matrix& Matrix::operator/=(double scalar)
 	return *this;
 }
 
-Matrix Matrix::operator/(const Matrix& m) const
+Matrix Matrix::operator/(const Matrix& m) const noexcept
 {
 	assert(cols == m.rows && m.cols == m.rows);
 	Matrix mInv = m.inv();
 	return *this * mInv;
 }
 
-Matrix Matrix::operator/(double scalar) const
+Matrix Matrix::operator/(double scalar) const noexcept
 {
 	if (data == nullptr) return Matrix();
 	Matrix out(rows, cols);
@@ -422,7 +418,7 @@ Matrix Matrix::operator/(double scalar) const
 	return out;
 }
 
-double Matrix::det() const
+double Matrix::det() const noexcept
 {
 	auto [ok, L, U, numSwaps] = LUDecompose();
 	if (ok)
@@ -438,7 +434,7 @@ double Matrix::det() const
 		return 0.0;
 }
 
-Matrix Matrix::inv() const
+Matrix Matrix::inv() const noexcept
 {
 	auto [ok, L, U, numSwaps] = LUDecompose();
 	assert(ok);
@@ -448,20 +444,20 @@ Matrix Matrix::inv() const
 	{
 		for (int i = (int)j - 1; i >= 0; i--)
 		{
-			double factor = U(i, j) / U(j, j);
+			double factor = *(U.data + i * U.cols + j) / *(U.data + j * U.cols + j);
 			U.rowOp(i, j, factor);
 			L.rowOp(i, j, factor);
 		}
 	}
 	for (size_t i = 0; i < rows; i++)
 	{
-		double factor = 1 / U(i, i);
+		double factor = 1 / *(U.data + i * U.cols + i);
 		L.rowScaling(i, factor);
 	}
 	return L;
 }
 
-Matrix Matrix::eye(size_t dim)
+Matrix Matrix::eye(size_t dim) noexcept
 {
 	assert(dim > 0);
 	Matrix out(dim, dim);
@@ -475,7 +471,7 @@ Matrix Matrix::eye(size_t dim)
 	return out;
 }
 
-Matrix Matrix::ones(size_t rows, size_t cols)
+Matrix Matrix::ones(size_t rows, size_t cols) noexcept
 {
 	assert(rows * cols > 0);
 	Matrix out(rows, cols);
@@ -489,7 +485,7 @@ Matrix Matrix::ones(size_t rows, size_t cols)
 	return out;
 }
 
-Matrix Matrix::zeros(size_t rows, size_t cols)
+Matrix Matrix::zeros(size_t rows, size_t cols) noexcept
 {
 	assert(rows * cols > 0);
 	Matrix out(rows, cols);
@@ -503,7 +499,7 @@ Matrix Matrix::zeros(size_t rows, size_t cols)
 	return out;
 }
 
-Matrix Matrix::skew(const Matrix& m)
+Matrix Matrix::skew(const Matrix& m) noexcept
 {
 	assert(m.rows == 3 && m.cols == 1);
 	Matrix out(3, 3);
@@ -513,13 +509,14 @@ Matrix Matrix::skew(const Matrix& m)
 	return out;
 }
 
-Matrix::~Matrix()
+Matrix::~Matrix() noexcept
 {
 	if (data != nullptr) delete[] data;
 }
 
 std::ostream& operator<<(std::ostream& os, const Matrix& m)
 {
+	os << std::showpoint;
 	for (size_t i = 0; i < m.rows; i++)
 	{
 		for (size_t j = 0; j < m.cols; j++)
@@ -528,10 +525,11 @@ std::ostream& operator<<(std::ostream& os, const Matrix& m)
 		}
 		std::cout << "\n";
 	}
+	os << std::noshowpoint;
 	return os;
 }
 
-Matrix operator+(double scalar, const Matrix& m)
+Matrix operator+(double scalar, const Matrix& m) noexcept
 {
 	if (m.data == nullptr) return Matrix(1, 1, { scalar });
 	Matrix out(m.rows, m.cols);
@@ -545,7 +543,7 @@ Matrix operator+(double scalar, const Matrix& m)
 	return out;
 }
 
-Matrix operator-(double scalar, const Matrix& m)
+Matrix operator-(double scalar, const Matrix& m) noexcept
 {
 	if (m.data == nullptr) return Matrix(1, 1, { scalar });
 	Matrix out(m.rows, m.cols);
@@ -559,7 +557,7 @@ Matrix operator-(double scalar, const Matrix& m)
 	return out;
 }
 
-Matrix operator*(double scalar, const Matrix& m)
+Matrix operator*(double scalar, const Matrix& m) noexcept
 {
 	if (m.data == nullptr) return Matrix();
 	Matrix out(m.rows, m.cols);
@@ -573,13 +571,13 @@ Matrix operator*(double scalar, const Matrix& m)
 	return out;
 }
 
-Matrix operator/(double scalar, const Matrix& m)
+Matrix operator/(double scalar, const Matrix& m) noexcept
 {
 	if (m.data == nullptr) return Matrix();
 	return scalar * m.inv();
 }
 
-Matrix abs(const Matrix& m)
+Matrix abs(const Matrix& m) noexcept
 {
 	Matrix out(m.rows, m.cols);
 	for (size_t i = 0; i < m.rows; i++)
