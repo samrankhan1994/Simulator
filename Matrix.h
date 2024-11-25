@@ -17,9 +17,9 @@ class Matrix
 	
 public:
 	Matrix() noexcept;
-	Matrix(size_t rows, size_t cols) noexcept;
-	Matrix(size_t rows, size_t cols, std::initializer_list<double> list) noexcept;
-	Matrix(std::initializer_list<std::initializer_list<double>> list) noexcept;
+	explicit Matrix(size_t rows, size_t cols) noexcept;
+	explicit Matrix(size_t rows, size_t cols, std::initializer_list<double> list) noexcept;
+	explicit Matrix(std::initializer_list<std::initializer_list<double>> list) noexcept;
 
 	Matrix(const Matrix& m) noexcept;
 	Matrix(Matrix&& m) noexcept;
