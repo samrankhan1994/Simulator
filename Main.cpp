@@ -5,9 +5,8 @@
 
 int main()
 {
-	Quaternion q1{ 1,2,3,4 };
-	Quaternion q2(q1);
+	Quaternion q1, q2(0.0, 1.57, 0.0);
 
-	std::cout << q1+q1-2*q1 + q1<< std::endl;
+	std::cout << q2 << std::endl;
 	
 }
