@@ -131,6 +131,7 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BinaryOccupancyMap.h" />
     <ClInclude Include="Dubins.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Quaternion.h" />

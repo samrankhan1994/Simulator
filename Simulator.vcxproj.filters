@@ -29,5 +29,8 @@
     <ClInclude Include="Dubins.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BinaryOccupancyMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
