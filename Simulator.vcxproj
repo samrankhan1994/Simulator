@@ -142,6 +142,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="StateSpace.h" />
     <ClInclude Include="ValidatorOccupancyMap.h" />
+    <ClInclude Include="Vector3D.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="path.txt" />

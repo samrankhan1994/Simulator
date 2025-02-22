@@ -4,6 +4,7 @@
 #include "Matrix.h"
 #include "Quaternion.h"
 #include "HAStar.h"
+#include "Vector3D.h"
 
 
 int main()

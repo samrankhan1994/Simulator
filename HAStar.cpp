@@ -229,8 +229,8 @@ bool HAStar::isExpansionValid(const DubinsPathSegment& pathSeg)
 	double temp = 0;
 	while (temp <= pathSeg.pathLength)
 	{
-		const Matrix& m = pathSeg.interpolate(temp);
-		if (!validator.isStateValid({ m(0,0), m(1,0), m(2,0) })) return false;
+		const Vector3D& v = pathSeg.interpolate(temp);
+		if (!validator.isStateValid({ v(0), v(1), v(2) })) return false;
 		temp += validationDistance;
 	}
 	return true;
@@ -307,8 +307,8 @@ std::tuple<bool, size_t, size_t, size_t> HAStar::plan(const State& startPose, co
 					double temp = pathSeg.pathLength;
 					while (temp >= 0)
 					{
-						const Matrix& m = pathSeg.interpolate(temp);
-						path.append({ m(0,0), m(1,0), m(2,0) });
+						const Vector3D& v = pathSeg.interpolate(temp);
+						path.append({ v(0), v(1), v(2) });
 						temp -= validationDistance;
 					}
 					path.append(s);

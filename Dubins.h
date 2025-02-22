@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cassert>
-#include "Matrix.h"
+#include "Vector3D.h"
 
 class DubinsException : public std::runtime_error
 {
@@ -14,22 +14,22 @@ class DubinsPathSegment
 {
     inline static double pi = 4.0 * atan(1.0);
 
-	Matrix z1, z2;
 	double toMinusPiToPi(double angle) const;
-	Matrix leftTransform(const Matrix& initialConfig, double length) const;
-	Matrix rightTransform(const Matrix& initialConfig, double length) const;
-	Matrix straightTransform(const Matrix& initialConfig, double length) const;
+	Vector3D leftTransform(const Vector3D& initialConfig, const double& length) const;
+	Vector3D rightTransform(const Vector3D& initialConfig, const double& length) const;
+	Vector3D straightTransform(const Vector3D& initialConfig, const double& length) const;
 public:
 	const double minTurningRadius;
-	const Matrix startConfig;
-	const Matrix goalConfig;
-	const Matrix motionLengths;
+	const Vector3D startConfig;
+	const Vector3D goalConfig;
+	const Vector3D motionLengths;
 	const std::string motionType;
 	const double pathLength;
+    Vector3D z1, z2;
 
-	DubinsPathSegment(const double& minTurningRadius, const Matrix& startConfig, const Matrix& goalConfig,
-		const Matrix& motionLengths, const std::string& motionType, const double& pathLength);
-	Matrix interpolate(double length) const;
+	DubinsPathSegment(const double& minTurningRadius, const Vector3D& startConfig, const Vector3D& goalConfig,
+		const Vector3D& motionLengths, const std::string& motionType, const double& pathLength);
+	Vector3D interpolate(double length) const;
 	bool operator<(const DubinsPathSegment& ps) const;
 };
 
@@ -38,25 +38,17 @@ class Dubins
 	inline static double pi = 4.0 * atan(1.0);
 
 	//Utility fn for 2D vectors
-	Matrix Rz(double angle) const;
-	Matrix unit(const Matrix& v) const;
-	Matrix unit(Matrix&& v) const;
-	double dotProduct(const Matrix& v1, const Matrix& v2) const;
-	double crossProduct(const Matrix& v1, const Matrix& v2) const;
-	double angle(const Matrix& v1, const Matrix& v2) const;
-	double angle(Matrix&& v1, Matrix&& v2) const;
-	double angle(Matrix&& v1, const Matrix& v2) const;
-	double angle(const Matrix& v1, Matrix&& v2) const;
+	double angle(const Vector3D& v1, const Vector3D& v2) const;
 	double toZeroToTwoPI(double angle) const;
-	Matrix computeCenterOfCircle(const Matrix& vehicleConfig, double minTurningRadius, char tt) const;
-	DubinsPathSegment RSR(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const;
-	DubinsPathSegment RSL(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const;
-	DubinsPathSegment LSR(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const;
-	DubinsPathSegment LSL(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const;
+	Vector3D computeCenterOfCircle(const Vector3D& vehicleConfig, double minTurningRadius, char tt) const;
+	DubinsPathSegment RSR(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const;
+	DubinsPathSegment RSL(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const;
+	DubinsPathSegment LSR(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const;
+	DubinsPathSegment LSL(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const;
 public:
 	Dubins();
-	DubinsPathSegment connect(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const;
-    bool isLongPath(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const noexcept;
+	DubinsPathSegment connect(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const;
+    bool isLongPath(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const noexcept;
 };
 
 
@@ -68,46 +60,46 @@ inline double DubinsPathSegment::toMinusPiToPi(double angle) const
     return angle;
 }
 
-inline Matrix DubinsPathSegment::leftTransform(const Matrix& initialConfig, double length) const
+inline Vector3D DubinsPathSegment::leftTransform(const Vector3D& initialConfig, const double& length) const
 {
-    double theta, theta_prev = initialConfig(2, 0);
-    theta = toMinusPiToPi(initialConfig(2, 0) - length / minTurningRadius);
-    return Matrix({ initialConfig(0, 0) - minTurningRadius * (sin(theta) - sin(theta_prev)),
-                    initialConfig(1, 0) - minTurningRadius * (-cos(theta) + cos(theta_prev)),
+    double theta, theta_prev = initialConfig(2);
+    theta = toMinusPiToPi(theta_prev - length / minTurningRadius);
+    return Vector3D({ initialConfig(0) - minTurningRadius * (sin(theta) - sin(theta_prev)),
+                    initialConfig(1) - minTurningRadius * (-cos(theta) + cos(theta_prev)),
                     theta });
 }
 
-inline Matrix DubinsPathSegment::rightTransform(const Matrix& initialConfig, double length) const
+inline Vector3D DubinsPathSegment::rightTransform(const Vector3D& initialConfig, const double& length) const
 {
-    double theta, theta_prev = initialConfig(2, 0);
-    theta = toMinusPiToPi(initialConfig(2, 0) + length / minTurningRadius);
-    return Matrix({ initialConfig(0, 0) + minTurningRadius * (sin(theta) - sin(theta_prev)),
-                    initialConfig(1, 0) + minTurningRadius * (-cos(theta) + cos(theta_prev)),
+    double theta, theta_prev = initialConfig(2);
+    theta = toMinusPiToPi(theta_prev + length / minTurningRadius);
+    return Vector3D({ initialConfig(0) + minTurningRadius * (sin(theta) - sin(theta_prev)),
+                    initialConfig(1) + minTurningRadius * (-cos(theta) + cos(theta_prev)),
                     theta });
 }
 
-inline Matrix DubinsPathSegment::straightTransform(const Matrix& initialConfig, double length) const
+inline Vector3D DubinsPathSegment::straightTransform(const Vector3D& initialConfig, const double& length) const
 {
-    double theta_prev = initialConfig(2, 0);
-    return Matrix({ initialConfig(0, 0) + length * cos(theta_prev),
-                    initialConfig(1, 0) + length * sin(theta_prev),
+    double theta_prev = initialConfig(2);
+    return Vector3D({ initialConfig(0) + length * cos(theta_prev),
+                    initialConfig(1) + length * sin(theta_prev),
                     theta_prev });
 }
 
-inline DubinsPathSegment::DubinsPathSegment(const double& minTurningRadius, const Matrix& startConfig,
-    const Matrix& goalConfig, const Matrix& motionLengths, const std::string& motionType, const double& pathLength) :
+inline DubinsPathSegment::DubinsPathSegment(const double& minTurningRadius, const Vector3D& startConfig,
+    const Vector3D& goalConfig, const Vector3D& motionLengths, const std::string& motionType, const double& pathLength) :
     minTurningRadius(minTurningRadius), startConfig(startConfig), goalConfig(goalConfig), motionLengths(motionLengths),
     motionType(motionType), pathLength(pathLength)
 {
-    z1 = motionType[0] == 'L' ? leftTransform(startConfig, motionLengths(0, 0)) : rightTransform(startConfig, motionLengths(0, 0));
-    z2 = straightTransform(z1, motionLengths(1, 0));
+    z1 = motionType[0] == 'L' ? leftTransform(startConfig, motionLengths(0)) : rightTransform(startConfig, motionLengths(0));
+    z2 = straightTransform(z1, motionLengths(1));
 }
 
-inline Matrix DubinsPathSegment::interpolate(double length) const
+inline Vector3D DubinsPathSegment::interpolate(double length) const
 {
     length = std::clamp(length, 0.0, pathLength);
-    double l1 = motionLengths(0, 0);
-    double l2 = l1 + motionLengths(1, 0);
+    double l1 = motionLengths(0);
+    double l2 = l1 + motionLengths(1);
     if (length <= l1)
         return motionType[0] == 'L' ? leftTransform(startConfig, length) : rightTransform(startConfig, length);
     else if (length <= l2)
@@ -121,64 +113,16 @@ inline bool DubinsPathSegment::operator<(const DubinsPathSegment& ps) const
     return pathLength < ps.pathLength;
 }
 
-inline Matrix Dubins::Rz(double angle) const
-{
-    return Matrix({ {cos(angle), -sin(angle)},{sin(angle), cos(angle)} });
-}
 
-inline Matrix Dubins::unit(const Matrix& v) const
-{
-    double magnitude = sqrt(dotProduct(v, v));
-    return v / magnitude;
-}
 
-inline Matrix Dubins::unit(Matrix&& v) const
+inline double Dubins::angle(const Vector3D& v1, const Vector3D& v2) const
 {
-    double magnitude = sqrt(dotProduct(v, v));
-    v /= magnitude;
-    return std::move(v);
-}
-
-inline double Dubins::dotProduct(const Matrix& v1, const Matrix& v2) const
-{
-    return v1(0, 0) * v2(0, 0) + v1(1, 0) * v2(1, 0);
-}
-
-inline double Dubins::crossProduct(const Matrix& v1, const Matrix& v2) const
-{
-    return v1(0, 0) * v2(1, 0) - v1(0, 1) * v2(0, 0);
-}
-
-inline double Dubins::angle(const Matrix& v1, const Matrix& v2) const
-{
-    const Matrix& unitV1 = unit(v1);
-    const Matrix& unitV2 = unit(v2);
-    double angle = acos(dotProduct(unitV1, unitV2));
-    return crossProduct(unitV1, unitV2) < 0.0 ? 2 * pi - angle : angle;
-}
-
-inline double Dubins::angle(Matrix&& v1, Matrix&& v2) const
-{
-    const Matrix& unitV1 = unit(std::move(v1));
-    const Matrix& unitV2 = unit(std::move(v2));
-    double angle = acos(dotProduct(unitV1, unitV2));
-    return crossProduct(unitV1, unitV2) < 0.0 ? 2 * pi - angle : angle;
-}
-
-inline double Dubins::angle(Matrix&& v1, const Matrix& v2) const
-{
-    const Matrix& unitV1 = unit(std::move(v1));
-    const Matrix& unitV2 = unit(v2);
-    double angle = acos(dotProduct(unitV1, unitV2));
-    return crossProduct(unitV1, unitV2) < 0.0 ? 2 * pi - angle : angle;
-}
-
-inline double Dubins::angle(const Matrix& v1, Matrix&& v2) const
-{
-    const Matrix& unitV1 = unit(v1);
-    const Matrix& unitV2 = unit(std::move(v2));
-    double angle = acos(dotProduct(unitV1, unitV2));
-    return crossProduct(unitV1, unitV2) < 0.0 ? 2 * pi - angle : angle;
+    const double& len1 = v1.length();
+    const double& len2 = v2.length();
+    double l1l2 = len1 * len2;
+    if (l1l2 == 0.0) throw DubinsException("Dubins Expception: Cannot find angle with zero vector");
+    double angle = acos(v1.dot(v2) / l1l2);
+    return v1.cross(v2)[2] < 0.0 ? 2 * pi - angle : angle;
 }
 
 inline double Dubins::toZeroToTwoPI(double angle) const
@@ -188,35 +132,35 @@ inline double Dubins::toZeroToTwoPI(double angle) const
     return angle;
 }
 
-inline Matrix Dubins::computeCenterOfCircle(const Matrix& vehicleConfig, double minTurningRadius, char tt) const
+inline Vector3D Dubins::computeCenterOfCircle(const Vector3D& vehicleConfig, double minTurningRadius, char tt) const
 {
-    double theta = (tt == 'L') ? vehicleConfig(2, 0) - pi / 2 : vehicleConfig(2, 0) + pi / 2;
-    return Matrix({ vehicleConfig(0, 0) + minTurningRadius * cos(theta),
-        vehicleConfig(1, 0) + minTurningRadius * sin(theta) });
+    double theta = (tt == 'L') ? vehicleConfig(2) - pi / 2 : vehicleConfig(2) + pi / 2;
+    return Vector3D(vehicleConfig(0) + minTurningRadius * cos(theta),
+        vehicleConfig(1) + minTurningRadius * sin(theta), 0.0);
 }
 
-inline DubinsPathSegment Dubins::RSR(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const
+inline DubinsPathSegment Dubins::RSR(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const
 {
-    const Matrix& Cs = computeCenterOfCircle(startConfig, minTurningRadius, 'R');
-    const Matrix& Ce = computeCenterOfCircle(goalConfig, minTurningRadius, 'R');
-    const Matrix& CstoCe = Ce - Cs;
-    double l2 = sqrt(dotProduct(CstoCe, CstoCe));
-    double thetaStart = startConfig(2, 0);
-    double thetaGoal = goalConfig(2, 0);
+    const Vector3D& Cs = computeCenterOfCircle(startConfig, minTurningRadius, 'R');
+    const Vector3D& Ce = computeCenterOfCircle(goalConfig, minTurningRadius, 'R');
+    const Vector3D& CstoCe = Ce - Cs;
+    double l2 = CstoCe.length();
+    double thetaStart = startConfig(2);
+    double thetaGoal = goalConfig(2);
     double v = angle({ 1,0,0 }, CstoCe);
     double l1 = minTurningRadius * fmod(2 * pi + toZeroToTwoPI(v - pi / 2) - toZeroToTwoPI(thetaStart - pi / 2), 2 * pi);
     double l3 = minTurningRadius * fmod(2 * pi + toZeroToTwoPI(thetaGoal - pi / 2) - toZeroToTwoPI(v - pi / 2), 2 * pi);
     return DubinsPathSegment(minTurningRadius, startConfig, goalConfig, { l1, l2, l3 }, "RSR", l1 + l2 + l3);
 }
 
-inline DubinsPathSegment Dubins::LSR(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const
+inline DubinsPathSegment Dubins::LSR(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const
 {
-    const Matrix& Cs = computeCenterOfCircle(startConfig, minTurningRadius, 'L');
-    const Matrix& Ce = computeCenterOfCircle(goalConfig, minTurningRadius, 'R');
-    const Matrix& CstoCe = Ce - Cs;
-    double l = sqrt(dotProduct(CstoCe, CstoCe));
-    double thetaStart = startConfig(2, 0);
-    double thetaGoal = goalConfig(2, 0);
+    const Vector3D& Cs = computeCenterOfCircle(startConfig, minTurningRadius, 'L');
+    const Vector3D& Ce = computeCenterOfCircle(goalConfig, minTurningRadius, 'R');
+    const Vector3D& CstoCe = Ce - Cs;
+    double l = CstoCe.length();
+    double thetaStart = startConfig(2);
+    double thetaGoal = goalConfig(2);
     double v = angle({ 1,0,0 }, CstoCe);
     double v2 = acos(2 * minTurningRadius / l);
     double l1 = minTurningRadius * fmod(2 * pi - toZeroToTwoPI(v2 + v) + toZeroToTwoPI(thetaStart + pi / 2), 2 * pi);
@@ -225,14 +169,14 @@ inline DubinsPathSegment Dubins::LSR(const Matrix& startConfig, const Matrix& go
     return DubinsPathSegment(minTurningRadius, startConfig, goalConfig, { l1, l2, l3 }, "LSR", l1 + l2 + l3);
 }
 
-inline DubinsPathSegment Dubins::RSL(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const
+inline DubinsPathSegment Dubins::RSL(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const
 {
-    const Matrix& Cs = computeCenterOfCircle(startConfig, minTurningRadius, 'R');
-    const Matrix& Ce = computeCenterOfCircle(goalConfig, minTurningRadius, 'L');
-    const Matrix& CstoCe = Ce - Cs;
-    double l = sqrt(dotProduct(CstoCe, CstoCe));
-    double thetaStart = toZeroToTwoPI(startConfig(2, 0));
-    double thetaGoal = toZeroToTwoPI(goalConfig(2, 0));
+    const Vector3D& Cs = computeCenterOfCircle(startConfig, minTurningRadius, 'R');
+    const Vector3D& Ce = computeCenterOfCircle(goalConfig, minTurningRadius, 'L');
+    const Vector3D& CstoCe = Ce - Cs;
+    double l = CstoCe.length();
+    double thetaStart = toZeroToTwoPI(startConfig(2));
+    double thetaGoal = toZeroToTwoPI(goalConfig(2));
     double v = angle({ 1,0,0 }, CstoCe);
     double v2 = toZeroToTwoPI(v - pi / 2 + asin(2 * minTurningRadius / l));
     double l1 = minTurningRadius * fmod(2 * pi + v2 - toZeroToTwoPI(thetaStart - pi / 2), 2 * pi);
@@ -241,14 +185,14 @@ inline DubinsPathSegment Dubins::RSL(const Matrix& startConfig, const Matrix& go
     return DubinsPathSegment(minTurningRadius, startConfig, goalConfig, { l1, l2, l3 }, "RSL", l1 + l2 + l3);
 }
 
-inline DubinsPathSegment Dubins::LSL(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const
+inline DubinsPathSegment Dubins::LSL(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const
 {
-    const Matrix& Cs = computeCenterOfCircle(startConfig, minTurningRadius, 'L');
-    const Matrix& Ce = computeCenterOfCircle(goalConfig, minTurningRadius, 'L');
-    const Matrix& CstoCe = Ce - Cs;
-    double l2 = sqrt(dotProduct(CstoCe, CstoCe));
-    double thetaStart = startConfig(2, 0);
-    double thetaGoal = goalConfig(2, 0);
+    const Vector3D& Cs = computeCenterOfCircle(startConfig, minTurningRadius, 'L');
+    const Vector3D& Ce = computeCenterOfCircle(goalConfig, minTurningRadius, 'L');
+    const Vector3D& CstoCe = Ce - Cs;
+    double l2 = CstoCe.length();
+    double thetaStart = startConfig(2);
+    double thetaGoal = goalConfig(2);
     double v = angle({ 1,0,0 }, CstoCe);
     double l1 = minTurningRadius * fmod(2 * pi - toZeroToTwoPI(v + pi / 2) + toZeroToTwoPI(thetaStart + pi / 2), 2 * pi);
     double l3 = minTurningRadius * fmod(2 * pi - toZeroToTwoPI(thetaGoal + pi / 2) + toZeroToTwoPI(v + pi / 2), 2 * pi);
@@ -259,14 +203,10 @@ inline Dubins::Dubins()
 {
 }
 
-inline DubinsPathSegment Dubins::connect(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const
+inline DubinsPathSegment Dubins::connect(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const
 {
     //Input Check
     assert(minTurningRadius > 0);
-    auto [row1, col1] = startConfig.getDimension();
-    assert(row1 == 3 && col1 == 1);
-    auto [row2, col2] = goalConfig.getDimension();
-    assert(row2 == 3 && col2 == 1);
 
     //Check for long path case
     if (!isLongPath(startConfig, goalConfig, minTurningRadius))
@@ -280,15 +220,12 @@ inline DubinsPathSegment Dubins::connect(const Matrix& startConfig, const Matrix
     return std::min({ ps1, ps2, ps3, ps4 });
 }
 
-inline bool Dubins::isLongPath(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const noexcept
+inline bool Dubins::isLongPath(const Vector3D& startConfig, const Vector3D& goalConfig, double minTurningRadius) const noexcept
 {
-    const auto& thetaStart = startConfig(2, 0);
-    const auto& thetaGoal = goalConfig(2, 0);
-    const Matrix& v = { goalConfig(0,0) - startConfig(0,0), goalConfig(1,0) - startConfig(1,0) };
-    const auto& theta = angle({ 1, 0, 0 }, v);
-    double alpha = theta - thetaStart;
-    double beta = theta - thetaGoal;
-    const auto& d = sqrt(dotProduct(v, v));
-    const auto& distanceCheck = minTurningRadius * (sqrt(4.0 - pow(abs(cos(alpha)) + abs(cos(beta)), 2.0)) + abs(sin(alpha)) + abs(sin(beta)));
-    return d > distanceCheck;
+    const Vector3D& v = goalConfig - startConfig;
+    const double& theta = angle({ 1, 0, 0 }, v);
+    double alpha = theta - startConfig(2);
+    double beta = theta - goalConfig(2);
+    double distanceCheck = minTurningRadius * (sqrt(4.0 - pow(abs(cos(alpha)) + abs(cos(beta)), 2.0)) + abs(sin(alpha)) + abs(sin(beta)));
+    return v.length() > distanceCheck;
 }
