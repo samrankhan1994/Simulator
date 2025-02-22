@@ -128,13 +128,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="HAStar.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Matrix.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BinaryOccupancyMap.h" />
     <ClInclude Include="Dubins.h" />
+    <ClInclude Include="HAStar.h" />
     <ClInclude Include="Matrix.h" />
+    <ClInclude Include="NavPath.h" />
     <ClInclude Include="Quaternion.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="StateSpace.h" />
+    <ClInclude Include="ValidatorOccupancyMap.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="path.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

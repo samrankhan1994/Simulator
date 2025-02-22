@@ -56,6 +56,7 @@ class Dubins
 public:
 	Dubins();
 	DubinsPathSegment connect(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const;
+    bool isLongPath(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const noexcept;
 };
 
 
@@ -268,15 +269,7 @@ inline DubinsPathSegment Dubins::connect(const Matrix& startConfig, const Matrix
     assert(row2 == 3 && col2 == 1);
 
     //Check for long path case
-    double thetaStart = startConfig(2, 0);
-    double thetaGoal = goalConfig(2, 0);
-    const Matrix& v = { goalConfig(0,0) - startConfig(0,0), goalConfig(1,0) - startConfig(1,0) };
-    double theta = angle({ 1, 0, 0 }, v);
-    double alpha = theta - thetaStart;
-    double beta = theta - thetaGoal;
-    double d = sqrt(dotProduct(v, v));
-    double distanceCheck = minTurningRadius * (sqrt(4.0 - pow(abs(cos(alpha)) + abs(cos(beta)), 2.0)) + abs(sin(alpha)) + abs(sin(beta)));
-    if (d <= distanceCheck) 
+    if (!isLongPath(startConfig, goalConfig, minTurningRadius))
         throw DubinsException("Dubins Exception: Long path check failed for start and goal configuration");
 
     //find shortest path and return
@@ -285,4 +278,17 @@ inline DubinsPathSegment Dubins::connect(const Matrix& startConfig, const Matrix
     const DubinsPathSegment& ps3 = LSR(startConfig, goalConfig, minTurningRadius);
     const DubinsPathSegment& ps4 = LSL(startConfig, goalConfig, minTurningRadius);
     return std::min({ ps1, ps2, ps3, ps4 });
+}
+
+inline bool Dubins::isLongPath(const Matrix& startConfig, const Matrix& goalConfig, double minTurningRadius) const noexcept
+{
+    const auto& thetaStart = startConfig(2, 0);
+    const auto& thetaGoal = goalConfig(2, 0);
+    const Matrix& v = { goalConfig(0,0) - startConfig(0,0), goalConfig(1,0) - startConfig(1,0) };
+    const auto& theta = angle({ 1, 0, 0 }, v);
+    double alpha = theta - thetaStart;
+    double beta = theta - thetaGoal;
+    const auto& d = sqrt(dotProduct(v, v));
+    const auto& distanceCheck = minTurningRadius * (sqrt(4.0 - pow(abs(cos(alpha)) + abs(cos(beta)), 2.0)) + abs(sin(alpha)) + abs(sin(beta)));
+    return d > distanceCheck;
 }

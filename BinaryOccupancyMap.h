@@ -14,9 +14,8 @@ class BinaryOccupancyMap
 	Point xLimit;
 	Point yLimit;
 	bool* map;
-	double distance(const Point& xy1, const Point& xy2);
 public:
-	
+	BinaryOccupancyMap();
 	BinaryOccupancyMap(const Point& xLimit, const Point& yLimit, const double& resolution);
 	BinaryOccupancyMap(const BinaryOccupancyMap& ob);
 	BinaryOccupancyMap(BinaryOccupancyMap&& ob) noexcept;
@@ -44,12 +43,23 @@ public:
 	bool valid(const Point& xy) const noexcept;
 	bool valid(const Index& ij) const noexcept;
 	void inflate(const double& radius) noexcept;
+	double distance(const Point& xy1, const Point& xy2) const noexcept;
+	double distance(const Index& ij1, const Index& ij2) const noexcept;
 	~BinaryOccupancyMap();
 };
 
-inline double BinaryOccupancyMap::distance(const Point& xy1, const Point& xy2)
+inline double BinaryOccupancyMap::distance(const Point& xy1, const Point& xy2) const noexcept
 {
 	return sqrt((xy2.first - xy1.first) * (xy2.first - xy1.first) + (xy2.second - xy1.second) * (xy2.second - xy1.second));
+}
+
+inline double BinaryOccupancyMap::distance(const Index& ij1, const Index& ij2) const noexcept
+{
+	return distance(grid2World(ij1), grid2World(ij2));
+}
+
+inline BinaryOccupancyMap::BinaryOccupancyMap(): BinaryOccupancyMap({0, 10}, {0, 10}, 1)
+{
 }
 
 inline BinaryOccupancyMap::BinaryOccupancyMap(const Point& xLimit, const Point& yLimit, const double& resolution):
@@ -153,12 +163,14 @@ inline const Point& BinaryOccupancyMap::getYLimit() const noexcept
 
 inline void BinaryOccupancyMap::setOccupancy(const Point& xy , bool val) noexcept
 {
+	if (!valid(xy)) return;
 	auto [i, j] = world2Grid(xy);
 	*(map + i * gridSize.second + j) = val;
 }
 
 inline void BinaryOccupancyMap::setOccupancy(const Index& ij, bool val) noexcept
 {
+	if (!valid(ij)) return;
 	*(map + ij.first * gridSize.second + ij.second) = val;
 }
 
@@ -167,7 +179,7 @@ inline void BinaryOccupancyMap::setOccupancy(const Point& xy, bool val, const do
 	//check validity of input point
 	if (!valid(xy)) return;
 
-	BinaryOccupancyMap visited({ xy.first - radius, xy.second + radius }, { xy.second - radius, xy.second + radius }, resolution);
+	BinaryOccupancyMap visited({ xy.first - radius, xy.first + radius }, { xy.second - radius, xy.second + radius }, resolution);
 	std::queue<Point> q;
 
 	q.push(xy);
@@ -254,12 +266,14 @@ inline Index BinaryOccupancyMap::world2Grid(const Point& xy) const noexcept
 
 inline bool BinaryOccupancyMap::checkOccupancy(const Point& xy) const noexcept
 {
+	if (!valid(xy)) return false;
 	auto [i, j] = world2Grid(xy);
 	return *(map + i * gridSize.second + j);
 }
 
 inline bool BinaryOccupancyMap::checkOccupancy(const Index& ij) const noexcept
 {
+	if (!valid(ij)) return false;
 	return *(map + ij.first * gridSize.second + ij.second);
 }
 
