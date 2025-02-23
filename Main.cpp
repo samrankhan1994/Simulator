@@ -9,7 +9,7 @@
 
 int main()
 {
-	std::ofstream file("path.txt");
+	/*std::ofstream file("path.txt");
 	double pi = 4.0 * atan(1.0);
 	BinaryOccupancyMap map({ -400, 400 }, { -400, 400 }, 1.0);
 	map.setOccupancy(Point(200, 0), true);
@@ -43,7 +43,7 @@ int main()
 		auto &[x, y, theta] = i;
 		file << x << "\t" << y << "\t" << theta << "\r\n";
 	}
-	file.close();
+	file.close();*/
 	
 
 }

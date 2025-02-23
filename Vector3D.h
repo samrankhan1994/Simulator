@@ -16,6 +16,7 @@ public:
     // Constructors
     constexpr Vector3D();
     constexpr Vector3D(double x, double y, double z);
+    constexpr Vector3D(double(&arr)[3]);
 
     // Defaults
     constexpr Vector3D(const Vector3D& other) = default;
@@ -81,7 +82,7 @@ public:
 
     // Output stream operator
     friend std::ostream& operator<<(std::ostream& os, const Vector3D& vec) {
-        os << "(" << vec[0] << ", " << vec[1] << ", " << vec[2] << ")";
+        os << std::showpoint << "( " << vec.data[0] << ", " << vec.data[1] << ", " << vec.data[2] <<" )" << std::noshowpoint;
         return os;
     }
 };
@@ -90,6 +91,13 @@ public:
 inline constexpr Vector3D::Vector3D() : data{ 0.0, 0.0, 0.0 } {}
 
 inline constexpr Vector3D::Vector3D(double x, double y, double z) : data{ x, y, z } {}
+
+inline constexpr Vector3D::Vector3D(double(&arr)[3])
+{
+    data[0] = arr[0];
+    data[1] = arr[1];
+    data[2] = arr[2];
+}
 
 inline constexpr double& Vector3D::operator[](int index) noexcept
 {

@@ -12,51 +12,49 @@ public:
 
 class Quaternion
 {
-	constexpr inline static double TOL = 1.0e-6;
-	double w, x, y, z;
+	double q[4];
+	double dot(const Quaternion& q) const noexcept;
 public:
-	Quaternion();
-	explicit Quaternion(const double& _w, const double& _x, const double& _y, const double& _z);
-	explicit Quaternion(const double& psi, const double& theta, const double& phi);
+	constexpr Quaternion();
+	constexpr Quaternion(const double& q0, const double& q1, const double& q2, const double& q3);
+	constexpr Quaternion(double (&arr)[4]);
 
-	Quaternion(const Quaternion& q) = default;
-	Quaternion(Quaternion&& q) noexcept = default;
+	// Defaults
+	constexpr Quaternion(const Quaternion& other) = default;
+	constexpr Quaternion(Quaternion&& other) noexcept = default;
+	constexpr Quaternion& operator=(const Quaternion& other) = default;
+	constexpr Quaternion& operator=(Quaternion&& other) = default;
 
-	Quaternion& operator=(const Quaternion& q) = default;
-	Quaternion& operator=(Quaternion&& q) = default;
+	constexpr Quaternion& operator+=(const Quaternion& other) noexcept;
+	constexpr Quaternion& operator+=(const double& scalar) noexcept;
+	constexpr Quaternion operator+(const Quaternion& other) const noexcept;
+	constexpr Quaternion operator+(const double& scalar) const noexcept;
 
-	Quaternion& operator=(std::initializer_list<double> list);
+	constexpr Quaternion& operator-=(const Quaternion& other) noexcept;
+	constexpr Quaternion& operator-=(const double& scalar) noexcept;
+	constexpr Quaternion operator-(const Quaternion& other) const noexcept;
+	constexpr Quaternion operator-(const double& scalar) const noexcept;
 
-	Quaternion& operator+=(const Quaternion& q) noexcept;
-	Quaternion& operator+=(const double& scalar) noexcept;
-	Quaternion operator+(const Quaternion& q) const noexcept;
-	Quaternion operator+(const double& scalar) const noexcept;
+	constexpr Quaternion& operator*=(const Quaternion& other) noexcept;
+	constexpr Quaternion& operator*=(const double& scalar) noexcept;
+	constexpr Quaternion operator*(const Quaternion& other) const noexcept;
+	constexpr Quaternion operator*(const double& scalar) const noexcept;
 
-	Quaternion& operator-=(const Quaternion& q) noexcept;
-	Quaternion& operator-=(const double& scalar) noexcept;
-	Quaternion operator-(const Quaternion& q) const noexcept;
-	Quaternion operator-(const double& scalar) const noexcept;
-
-	Quaternion& operator*=(const Quaternion& q) noexcept;
-	Quaternion& operator*=(const double& scalar) noexcept;
-	Quaternion operator*(const Quaternion& q) const noexcept;
-	Quaternion operator*(const double& scalar) const noexcept;
-
-	Quaternion& operator/=(const Quaternion& q);
-	Quaternion& operator/=(const double& scalar);
-	Quaternion operator/(const Quaternion& q) const;
-	Quaternion operator/(const double& scalar) const;
+	constexpr Quaternion& operator/=(const Quaternion& other);
+	constexpr Quaternion& operator/=(const double& scalar);
+	constexpr Quaternion operator/(const Quaternion& other) const;
+	constexpr Quaternion operator/(const double& scalar) const;
 
 	double mag() const noexcept;
 	Quaternion normalize() const;
-	Quaternion conj() const noexcept;
+	Quaternion& normalize();
+	constexpr Quaternion conj() const noexcept;
 	Quaternion inv() const;
-	double dot(const Quaternion& q) const noexcept;
 
-	Quaternion derivative(const double& p, const double& q, const double& r) const noexcept;
 	static Quaternion lerp(const Quaternion& start, const Quaternion& end, double u) noexcept;
 	static Quaternion slerp(const Quaternion& start, const Quaternion& end, double u) noexcept;
-	static Quaternion fromAxisAngle(const double& x, const double& y, const double& z, const double& angle) noexcept;
+
+	constexpr const double(&getData()const noexcept)[4];
 
 	~Quaternion() noexcept = default;
 
@@ -67,197 +65,171 @@ public:
 	friend Quaternion operator/(const double& scalar, const Quaternion& q);
 };
 
-inline Quaternion::Quaternion() : w(1), x(0), y(0), z(0) {}
+inline constexpr Quaternion::Quaternion() : q{0.0, 0.0,  0.0, 0.0} {}
 
-inline Quaternion::Quaternion(const double& _w, const double& _x, const double& _y, const double& _z) : w(_w), x(_x), y(_y), z(_z) {}
+inline constexpr Quaternion::Quaternion(const double& q0, const double& q1, const double& q2, const double& q3) : q{q0, q1, q2, q3} {}
 
-inline Quaternion::Quaternion(const double& psi, const double& theta, const double& phi)
+inline constexpr Quaternion::Quaternion(double(&arr)[4])
 {
-	double halfYaw = psi * 0.5;
-	double halfPitch = theta * 0.5;
-	double halfRoll = phi * 0.5;
-
-	// Calculate the components of the quaternion
-	double cosHalfYaw = cos(halfYaw);
-	double sinHalfYaw = sin(halfYaw);
-	double cosHalfPitch = cos(halfPitch);
-	double sinHalfPitch = sin(halfPitch);
-	double cosHalfRoll = cos(halfRoll);
-	double sinHalfRoll = sin(halfRoll);
-
-	// Set the quaternion components based on the Euler angles
-	w = cosHalfYaw * cosHalfPitch * cosHalfRoll + sinHalfYaw * sinHalfPitch * sinHalfRoll;
-	x = sinHalfYaw * cosHalfPitch * cosHalfRoll - cosHalfYaw * sinHalfPitch * sinHalfRoll;
-	y = cosHalfYaw * sinHalfPitch * cosHalfRoll + sinHalfYaw * cosHalfPitch * sinHalfRoll;
-	z = cosHalfYaw * cosHalfPitch * sinHalfRoll - sinHalfYaw * sinHalfPitch * cosHalfRoll;
+	q[0] = arr[0];
+	q[1] = arr[1];
+	q[2] = arr[2];
+	q[3] = arr[3];
 }
 
-inline Quaternion& Quaternion::operator=(std::initializer_list<double> list)
+inline constexpr Quaternion& Quaternion::operator+=(const Quaternion& other) noexcept
 {
-	if (list.size() != 4) throw QuaternionException("Size of initializer list is not 4");
-	auto itr = list.begin();
-	w = *itr++;
-	x = *itr++;
-	y = *itr++;
-	z = *itr++;
+	q[0] += other.q[0];
+	q[1] += other.q[1];
+	q[2] += other.q[2];
+	q[3] += other.q[3];
 	return *this;
 }
 
-inline Quaternion& Quaternion::operator+=(const Quaternion& q) noexcept
+inline constexpr Quaternion& Quaternion::operator+=(const double& scalar) noexcept
 {
-	w += q.w;
-	x += q.x;
-	y += q.y;
-	z += q.z;
+	q[0] += scalar;
+	q[1] += scalar;
+	q[2] += scalar;
+	q[3] += scalar;
 	return *this;
 }
 
-inline Quaternion& Quaternion::operator+=(const double& scalar) noexcept
+inline constexpr Quaternion Quaternion::operator+(const Quaternion& other) const noexcept
 {
-	w += scalar;
-	x += scalar;
-	y += scalar;
-	z += scalar;
+	return Quaternion(q[0] + other.q[0], q[1] + other.q[1], q[2] + other.q[2], q[3] + other.q[3]);
+}
+
+inline constexpr Quaternion Quaternion::operator+(const double& scalar) const noexcept
+{
+	return Quaternion(q[0] + scalar, q[1] + scalar, q[2] + scalar, q[3] + scalar);
+}
+
+inline constexpr Quaternion& Quaternion::operator-=(const Quaternion& other) noexcept
+{
+	q[0] -= other.q[0];
+	q[1] -= other.q[1];
+	q[2] -= other.q[2];
+	q[3] -= other.q[3];
 	return *this;
 }
 
-inline Quaternion Quaternion::operator+(const Quaternion& q) const noexcept
+inline constexpr Quaternion& Quaternion::operator-=(const double& scalar) noexcept
 {
-	return Quaternion(w + q.w, x + q.x, y + q.y, z + q.z);
-}
-
-inline Quaternion Quaternion::operator+(const double& scalar) const noexcept
-{
-	return Quaternion(w + scalar, x + scalar, y + scalar, z + scalar);
-}
-
-inline Quaternion& Quaternion::operator-=(const Quaternion& q) noexcept
-{
-	w -= q.w;
-	x -= q.x;
-	y -= q.y;
-	z -= q.z;
+	q[0] -= scalar;
+	q[1] -= scalar;
+	q[2] -= scalar;
+	q[3] -= scalar;
 	return *this;
 }
 
-inline Quaternion& Quaternion::operator-=(const double& scalar) noexcept
+inline constexpr Quaternion Quaternion::operator-(const Quaternion& other) const noexcept
 {
-	w -= scalar;
-	x -= scalar;
-	y -= scalar;
-	z -= scalar;
-	return *this;
+	return Quaternion(q[0] - other.q[0], q[1] - other.q[1], q[2] - other.q[2], q[3] - other.q[3]);
 }
 
-inline Quaternion Quaternion::operator-(const Quaternion& q) const noexcept
+inline constexpr Quaternion Quaternion::operator-(const double& scalar) const noexcept
 {
-	return Quaternion(w - q.w, x - q.x, y - q.y, z - q.z);
+	return Quaternion(q[0] - scalar, q[1] - scalar, q[2] - scalar, q[3] - scalar);
 }
 
-inline Quaternion Quaternion::operator-(const double& scalar) const noexcept
-{
-	return Quaternion(w - scalar, x - scalar, y - scalar, z - scalar);
-}
-
-inline Quaternion& Quaternion::operator*=(const Quaternion& q) noexcept
+inline constexpr Quaternion& Quaternion::operator*=(const Quaternion& other) noexcept
 {
 	*this = Quaternion(
-		w * q.w - x * q.x - y * q.y - z * q.z, // w
-		w * q.x + x * q.w + y * q.z - z * q.y, // x
-		w * q.y - x * q.z + y * q.w + z * q.x, // y
-		w * q.z + x * q.y - y * q.x + z * q.w  // z
+		q[0] * other.q[0] - q[1] * other.q[1] - q[2] * other.q[2] - q[3] * other.q[3], // q[0]
+		q[0] * other.q[1] + q[1] * other.q[0] + q[2] * other.q[3] - q[3] * other.q[2], // q[1]
+		q[0] * other.q[2] - q[1] * other.q[3] + q[2] * other.q[0] + q[3] * other.q[1], // q[2]
+		q[0] * other.q[3] + q[1] * other.q[2] - q[2] * other.q[1] + q[3] * other.q[0]  // q[3]
 	);
 	return *this;
 }
 
-inline Quaternion& Quaternion::operator*=(const double& scalar) noexcept
+inline constexpr Quaternion& Quaternion::operator*=(const double& scalar) noexcept
 {
-	w = w * scalar;
-	x = x * scalar;
-	y = y * scalar;
-	z = z * scalar;
+	q[0] *= scalar;
+	q[1] *= scalar;
+	q[2] *= scalar;
+	q[3] *= scalar;
 	return *this;
 }
 
-Quaternion Quaternion::operator*(const Quaternion& q) const noexcept
+inline constexpr Quaternion Quaternion::operator*(const Quaternion& other) const noexcept
 {
 	return Quaternion(
-		w * q.w - x * q.x - y * q.y - z * q.z, // w
-		w * q.x + x * q.w + y * q.z - z * q.y, // x
-		w * q.y - x * q.z + y * q.w + z * q.x, // y
-		w * q.z + x * q.y - y * q.x + z * q.w  // z
+		q[0] * other.q[0] - q[1] * other.q[1] - q[2] * other.q[2] - q[3] * other.q[3], // q[0]
+		q[0] * other.q[1] + q[1] * other.q[0] + q[2] * other.q[3] - q[3] * other.q[2], // q[1]
+		q[0] * other.q[2] - q[1] * other.q[3] + q[2] * other.q[0] + q[3] * other.q[1], // q[2]
+		q[0] * other.q[3] + q[1] * other.q[2] - q[2] * other.q[1] + q[3] * other.q[0]  // q[3]
 	);
 }
 
-inline Quaternion Quaternion::operator*(const double& scalar) const noexcept
+inline constexpr Quaternion Quaternion::operator*(const double& scalar) const noexcept
 {
-	return Quaternion(w * scalar, x * scalar, y * scalar, z * scalar);
+	return Quaternion(q[0] * scalar, q[1] * scalar, q[2] * scalar, q[3] * scalar);
 }
 
-inline Quaternion& Quaternion::operator/=(const Quaternion& q)
+inline constexpr Quaternion& Quaternion::operator/=(const Quaternion& other)
 {
-	*this = *this * q.inv();
+	*this = *this * other.inv();
 	return *this;
 }
 
-inline Quaternion& Quaternion::operator/=(const double& scalar)
+inline constexpr Quaternion& Quaternion::operator/=(const double& scalar)
 {
-	if (abs(scalar) < TOL) throw QuaternionException("Quaternion divide by zero");
-	w = w / scalar;
-	x = x / scalar;
-	y = y / scalar;
-	z = z / scalar;
+	if (scalar == 0.0) throw QuaternionException("Quaternion Exception: divide by zero");
+	q[0] /= scalar;
+	q[1] /= scalar;
+	q[2] /= scalar;
+	q[3] /= scalar;
 	return *this;
 }
 
-inline Quaternion Quaternion::operator/(const Quaternion& q) const
+inline constexpr Quaternion Quaternion::operator/(const Quaternion& other) const
 {
-	return *this * q.inv();
+	return *this * other.inv();
 }
 
-inline Quaternion Quaternion::operator/(const double& scalar) const
+inline constexpr Quaternion Quaternion::operator/(const double& scalar) const
 {
-	if (abs(scalar) < TOL) throw QuaternionException("Quaternion divide by zero");
-	return Quaternion(w / scalar, x / scalar, y / scalar, z / scalar);
+	if (scalar == 0.0) throw QuaternionException("Quaternion Exception: divide by scalar zero");
+	return Quaternion(q[0] / scalar, q[1] / scalar, q[2] / scalar, q[3] / scalar);
 }
 
 inline double Quaternion::mag() const noexcept
 {
-	return std::sqrt(w * w + x * x + y * y + z * z);
+	return std::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
 }
 
 inline Quaternion Quaternion::normalize() const
 {
 	double m = mag();
-	if (m < TOL) throw QuaternionException("Quaternion magnitude is zero");
-	return Quaternion(w / m, x / m, y / m, z / m);
+	if (m == 0.0) throw QuaternionException("Quaternion Exception: Cannot normalize zero quaternion");
+	return Quaternion(q[0] / m, q[1] / m, q[2] / m, q[3] / m);
 }
 
-inline Quaternion Quaternion::conj() const noexcept
+inline Quaternion& Quaternion::normalize()
 {
-	return Quaternion(w, -x, -y, -z);
+	double m = mag();
+	if (m == 0.0) throw QuaternionException("Quaternion Exception: Cannot normalize zero quaternion");
+	*this /= m;
+	return *this;
+}
+
+inline constexpr Quaternion Quaternion::conj() const noexcept
+{
+	return Quaternion(q[0], -q[1], -q[2], -q[3]);
 }
 
 inline Quaternion Quaternion::inv() const
 {
 	double m = mag();
-	if(m < TOL) throw QuaternionException("Quaternion magnitude is zero");
+	if (m == 0.0) throw QuaternionException("Quaternion Exception: Cannot invert zero quaternion");
 	return conj() / (m * m);
 }
 
-inline double Quaternion::dot(const Quaternion& q) const noexcept
+inline double Quaternion::dot(const Quaternion& other) const noexcept
 {
-	return w * q.w + x * q.x + y * q.y + z * q.z;
-}
-
-inline Quaternion Quaternion::derivative(const double& p, const double& q, const double& r) const noexcept
-{
-	return Quaternion(
-		-0.5 * (x * p + y * q + z * r),
-		0.5 * (w * p + y * r - z * q),
-		0.5 * (w * q - x * r + z * p),
-		0.5 * (w * r + x * q - y * p)
-	);
+	return q[0] * other.q[0] + q[1] * other.q[1] + q[2] * other.q[2] + q[3] * other.q[3];
 }
 
 inline Quaternion Quaternion::lerp(const Quaternion& start, const Quaternion& end, double u)  noexcept
@@ -272,36 +244,35 @@ inline Quaternion Quaternion::slerp(const Quaternion& start, const Quaternion& e
 	double dotProduct = start.dot(end);
 	dotProduct = std::clamp(dotProduct, 0.0, 1.0);
 	double omega = std::acos(dotProduct);
-	if (omega < TOL) return start;
+	if (omega < 1e-3) return start;
 	double sinOmega = std::sin(omega);
 	return (sin((1 - u) * omega) / sinOmega) * start + (sin(u * omega) / sinOmega) * end;
 }
 
-inline Quaternion Quaternion::fromAxisAngle(const double& x, const double& y, const double& z, const double& angle) noexcept
+inline constexpr const double(&Quaternion::getData() const noexcept)[4]
 {
-	double s = std::sin(angle / 2);
-	return Quaternion(std::cos(angle/2), x * s, y * s, z * s);
+	return q;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Quaternion& q)
 {
-	os << std::showpoint << "( " << q.w << " + " << q.x << "i + " << q.y << "j + " << q.z << "k )" << std::noshowpoint;
+	os << std::showpoint << "( " << q.q[0] << ", " << q.q[1] << ", " << q.q[2] << ", " << q.q[3] << " )" << std::noshowpoint;
 	return os;
 }
 
 inline Quaternion operator+(const double& scalar, const Quaternion& q) noexcept
 {
-	return Quaternion(scalar + q.w, scalar + q.x, scalar + q.y, scalar + q.z);
+	return Quaternion(scalar + q.q[0], scalar + q.q[1], scalar + q.q[2], scalar + q.q[3]);
 }
 
 inline Quaternion operator-(const double& scalar, const Quaternion& q) noexcept
 {
-	return Quaternion(scalar - q.w, scalar - q.x, scalar - q.y, scalar - q.z);
+	return Quaternion(scalar - q.q[0], scalar - q.q[1], scalar - q.q[2], scalar - q.q[3]);
 }
 
 inline Quaternion operator*(const double& scalar, const Quaternion& q) noexcept
 {
-	return Quaternion(scalar * q.w, scalar * q.x, scalar * q.y, scalar * q.z);
+	return Quaternion(scalar * q.q[0], scalar * q.q[1], scalar * q.q[2], scalar * q.q[3]);
 }
 
 inline Quaternion operator/(const double& scalar, const Quaternion& q)
