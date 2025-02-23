@@ -45,6 +45,8 @@ public:
 	constexpr Quaternion operator/(const Quaternion& other) const;
 	constexpr Quaternion operator/(const double& scalar) const;
 
+	bool operator==(const Quaternion& other) const noexcept;
+
 	double mag() const noexcept;
 	Quaternion normalize() const;
 	Quaternion& normalize();
@@ -193,6 +195,11 @@ inline constexpr Quaternion Quaternion::operator/(const double& scalar) const
 {
 	if (scalar == 0.0) throw QuaternionException("Quaternion Exception: divide by scalar zero");
 	return Quaternion(q[0] / scalar, q[1] / scalar, q[2] / scalar, q[3] / scalar);
+}
+
+inline bool Quaternion::operator==(const Quaternion& other) const noexcept
+{
+	return memcmp(q, other.q, 4 * sizeof(double)) == 0;
 }
 
 inline double Quaternion::mag() const noexcept

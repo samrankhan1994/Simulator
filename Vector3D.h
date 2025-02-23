@@ -186,7 +186,7 @@ inline constexpr Vector3D Vector3D::operator*(const double& scalar) const noexce
 
 inline bool Vector3D::operator==(const Vector3D& other) const noexcept
 {
-    return memcmp(data, other.data, sizeof(double)) == 0;
+    return memcmp(data, other.data, 3 * sizeof(double)) == 0;
 }
 
 inline constexpr double Vector3D::dot(const Vector3D& other) const noexcept
